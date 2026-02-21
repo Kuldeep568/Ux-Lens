@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && npx puppeteer browsers install chrome
     startCommand: npm start
     healthCheckPath: /
     envVars:
@@ -13,9 +13,14 @@ services:
         value: production
       - key: PORT
         value: 5000
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/.cache/puppeteer
+      - key: PUPPETEER_SKIP_DOWNLOAD
+        value: false
       - key: MONGO_URI
-        sync: false          # Set manually in Render dashboard
+        sync: false
       - key: GEMINI_API_KEY
-        sync: false          # Set manually in Render dashboard
+        sync: false
       - key: CLIENT_URL
-        sync: false          # Set to your Vercel frontend URL after deploying
+        sync: false
+

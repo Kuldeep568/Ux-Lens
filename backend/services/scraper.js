@@ -1,19 +1,52 @@
 const puppeteer = require('puppeteer');
+const path = require('path');
+const fs = require('fs');
+
+// Resolve Chrome executable — handles both local and Render environments
+function getChromePath() {
+    // If PUPPETEER_CACHE_DIR is set (Render), find Chrome inside it
+    const cacheDir = process.env.PUPPETEER_CACHE_DIR;
+    if (cacheDir && fs.existsSync(cacheDir)) {
+        // Walk chrome/ subdirectory to find the binary
+        const chromeDir = path.join(cacheDir, 'chrome');
+        if (fs.existsSync(chromeDir)) {
+            const [platform] = fs.readdirSync(chromeDir);
+            if (platform) {
+                const [version] = fs.readdirSync(path.join(chromeDir, platform));
+                if (version) {
+                    const bin = path.join(chromeDir, platform, version, 'chrome-linux64', 'chrome');
+                    if (fs.existsSync(bin)) return bin;
+                    // Alternate path structure
+                    const bin2 = path.join(chromeDir, platform, version, 'chrome');
+                    if (fs.existsSync(bin2)) return bin2;
+                }
+            }
+        }
+    }
+    return undefined; // Let puppeteer find its bundled Chrome
+}
 
 async function scrapePage(url) {
     let browser;
     try {
+        const executablePath = getChromePath();
+        console.log('[Scraper] Chrome path:', executablePath || 'puppeteer bundled default');
+
         browser = await puppeteer.launch({
             headless: 'new',
+            executablePath,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--disable-gpu',
+                '--single-process',          // required on Render's free containers
+                '--no-zygote',
                 '--window-size=1440,900',
             ],
         });
+
 
         const page = await browser.newPage();
 
